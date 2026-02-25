@@ -52,43 +52,37 @@ def crear_producto(request):
 
 @csrf_exempt
 def actualizar_producto(request, id):
-    if request.method != "PUT":
-        return JsonResponse(
-            {"error": "Método no permitido"},
-            status=405
-        )
+    if request.method == "PUT":
+        try:
+            data = json.loads(request.body)
+            producto = Producto.objects.get(id=id)
 
-    if not request.body:
-        return JsonResponse(
-            {"error": "El cuerpo de la petición está vacío"},
-            status=400
-        )
+            producto.nombre = data["nombre"]
+            producto.cantidad = data["cantidad"]
+            producto.precio = data["precio"]
+            producto.save()
 
-    try:
-        data = json.loads(request.body.decode("utf-8"))
-        producto = Producto.objects.get(id=id)
+            return JsonResponse(
+                {"mensaje": "Producto actualizado"},
+                status=200
+            )
 
-        producto.nombre = data.get("nombre", producto.nombre)
-        producto.cantidad = data.get("cantidad", producto.cantidad)
-        producto.precio = data.get("precio", producto.precio)
-        producto.save()
+        except Producto.DoesNotExist:
+            return JsonResponse(
+                {"error": "Producto no encontrado"},
+                status=404
+            )
 
-        return JsonResponse(
-            {"mensaje": "Producto actualizado"},
-            status=200
-        )
+        except json.JSONDecodeError:
+            return JsonResponse(
+                {"error": "JSON inválido"},
+                status=400
+            )
 
-    except Producto.DoesNotExist:
-        return JsonResponse(
-            {"error": "Producto no encontrado"},
-            status=404
-        )
-
-    except json.JSONDecodeError:
-        return JsonResponse(
-            {"error": "JSON inválido"},
-            status=400
-        )
+    return JsonResponse(
+        {"error": "Método no permitido"},
+        status=405
+    )
 
 
 @csrf_exempt
